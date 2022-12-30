@@ -1,0 +1,7 @@
+secret.py
+.idea
+*.pyc
+dist
+*.egg-info
+venv
+example.py
