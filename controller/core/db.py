@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import DictCursor
 
 
 class DataBase:
@@ -34,22 +35,16 @@ class DataBase:
         self.conn.close()
 
     def __query(self, callback, response_limit):
-        def to_dict(item):
-            if item:
-                return dict(zip(columns, item))
-            return {}
 
-        with self.conn.cursor() as cursor:
+        with self.conn.cursor(cursor_factory=DictCursor) as cursor:
             callback(cursor)
-            columns = [col.name for col in cursor.description or []]
-            if columns:
-                if response_limit == 1:
-                    response = to_dict(cursor.fetchone())
-                elif response_limit <= 0:
-                    response = list(map(to_dict, cursor.fetchall()))
-                else:
-                    response = list(map(to_dict, cursor.fetchmany(response_limit)))
-                return response
+            if response_limit == 1:
+                response = dict(cursor.fetchone())
+            elif response_limit <= 0:
+                response = list(map(dict, cursor.fetchall()))
+            else:
+                response = list(map(dict, cursor.fetchmany(response_limit)))
+            return response
 
     @staticmethod
     def error_to_sql(value):
