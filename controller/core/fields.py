@@ -15,6 +15,7 @@ class CustomField(BaseModel):
 
 
 class Const(CustomField):
+    """Неизменяемое значение"""
 
     @classmethod
     def validate(cls, value, values, config, field):
