@@ -134,9 +134,6 @@ except ValidationError as e:
 
 # FastAPI
 
-Использование данного подхода с FastAPI раскрывается еще сильнее,
-мы получаем грубо говоря автодокументирование нашего api с которого еще и выполнить запрос можно
-
 ```python
 from controller.core.models import FunctionModel
 from controller.core.db import DataBase
