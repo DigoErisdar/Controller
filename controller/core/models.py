@@ -1,4 +1,5 @@
 import re
+from typing import Any, Union
 
 from pydantic import BaseModel, BaseConfig
 
@@ -38,21 +39,29 @@ class Model(BaseModel):
     def func_name(self):
         return self._func_name or self.camel_to_snake(self.__class__.__qualname__)
 
+    @staticmethod
+    def catch_response(data: Any):
+        """Обработка ответа"""
+        return data
+
 
 class FunctionModel(Model):
 
     def __len__(self):
         return self.length()
 
-    def get(self, limit=1):
+    def get(self, limit: int = 1) -> Union[dict, list]:
+        """Получение n элементов"""
         with self._db as db:
-            return db.function(*self.dict().values(), func_name=self.func_name, response_limit=limit)
+            return self.catch_response(db.function(*self.dict().values(), func_name=self.func_name, response_limit=limit))
 
     def all(self):
+        """Получение всех элементов"""
         with self._db as db:
-            return db.function(*self.dict().values(), func_name=self.func_name, response_limit=-1)
+            return self.catch_response(db.function(*self.dict().values(), func_name=self.func_name, response_limit=-1))
 
-    def length(self):
+    def length(self) -> int:
+        """Получение количество строк"""
         with self._db as db:
             return db.function(*self.dict().values(),
                                func_name=self.func_name, response_limit=1,
@@ -61,5 +70,6 @@ class FunctionModel(Model):
 
 class ProcedureModel(Model):
     def execute(self):
+        """Выполнить"""
         with self._db as db:
-            return db.procedure(*self.dict().values(), func_name=self.func_name)
+            return self.catch_response(db.procedure(*self.dict().values(), func_name=self.func_name))

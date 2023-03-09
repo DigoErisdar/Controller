@@ -35,7 +35,7 @@ class DataBase:
         self.conn.close()
 
     def __query(self, callback, response_limit):
-
+        """Выполнение запроса по получению"""
         with self.conn.cursor(cursor_factory=DictCursor) as cursor:
             callback(cursor)
             if response_limit == 1:
@@ -65,7 +65,9 @@ class DataBase:
         try:
             return cursor.execute(f"{prefix} {func_name}({proc_param})", args)
         except Exception as e:
-            raise ValueError(f"""Ошибка при вызове {prefix} {DataBase.func_name_with_attrs_to_sql(func_name, *args)}""")
+            raise ValueError(
+                f"""Ошибка с параметрами в {prefix} {DataBase.func_name_with_attrs_to_sql(func_name, *args)}
+                \n {e}""")
 
     def function(self, *args, func_name: str, response_limit: int = -1, aggregate='*'):
         return self.__query(
