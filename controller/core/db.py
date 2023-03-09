@@ -36,14 +36,19 @@ class DataBase:
 
     def __query(self, callback, response_limit):
         """Выполнение запроса по получению"""
-        with self.conn.cursor(cursor_factory=DictCursor) as cursor:
+        def to_dict(item):
+            if item:
+                return dict(zip(columns, item))
+            return {}
+        with self.conn.cursor() as cursor:
             callback(cursor)
+            columns = [col.name for col in cursor.description or []]
             if response_limit == 1:
-                response = dict(cursor.fetchone())
+                response = to_dict(cursor.fetchone())
             elif response_limit <= 0:
-                response = list(map(dict, cursor.fetchall()))
+                response = list(map(to_dict, cursor.fetchall()))
             else:
-                response = list(map(dict, cursor.fetchmany(response_limit)))
+                response = list(map(to_dict, cursor.fetchmany(response_limit)))
             return response
 
     @staticmethod
