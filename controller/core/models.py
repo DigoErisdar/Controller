@@ -72,4 +72,4 @@ class ProcedureModel(Model):
     def execute(self):
         """Выполнить"""
         with self._db as db:
-            return self.catch_response(db.procedure(*self.dict().values(), func_name=self.func_name))
+            return self.catch_response(db.procedure(self.func_name, *self.dict().values()))
