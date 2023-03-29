@@ -1,5 +1,4 @@
 import psycopg2
-from psycopg2.extras import DictCursor
 
 
 class DataBase:
@@ -36,15 +35,20 @@ class DataBase:
 
     def __query(self, callback, response_limit):
         """Выполнение запроса по получению"""
+
         def to_dict(item):
             if item:
                 return dict(zip(columns, item))
             return {}
+
         with self.conn.cursor() as cursor:
             callback(cursor)
             columns = [col.name for col in cursor.description or []]
             if response_limit == 1:
-                response = to_dict(cursor.fetchone())
+                try:
+                    response = to_dict(cursor.fetchone())
+                except Exception as e:
+                    return None
             elif response_limit <= 0:
                 response = list(map(to_dict, cursor.fetchall()))
             else:

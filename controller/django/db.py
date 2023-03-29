@@ -12,6 +12,6 @@ class DjangoDataBase(DataBase):
     def __enter__(self):
         self.conn = connections[self.db_name]
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
