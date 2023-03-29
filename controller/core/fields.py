@@ -32,6 +32,8 @@ class FormatDate(CustomField):
 
     @classmethod
     def validate(cls, value, values, config, field):
+        if not value:
+            return None
         for frmt in cls._input_format:
             try:
                 dt = datetime.strptime(value, frmt)
