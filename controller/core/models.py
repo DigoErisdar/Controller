@@ -52,16 +52,19 @@ class FunctionModel(Model):
 
     def get(self, limit: int = 1) -> Union[dict, list]:
         """Получение n элементов"""
+        print(f'Запрос [{limit}]: {self.func_name} {self.dict()}')
         with self._db as db:
             return self.catch_response(db.function(*self.dict().values(), func_name=self.func_name, response_limit=limit))
 
     def all(self):
         """Получение всех элементов"""
+        print(f'Запрос [все]: {self.func_name} {self.dict()}')
         with self._db as db:
             return self.catch_response(db.function(*self.dict().values(), func_name=self.func_name, response_limit=-1))
 
     def length(self) -> int:
         """Получение количество строк"""
+        print(f'Запрос [count]: {self.func_name} {self.dict()}')
         with self._db as db:
             return db.function(*self.dict().values(),
                                func_name=self.func_name, response_limit=1,
@@ -71,5 +74,6 @@ class FunctionModel(Model):
 class ProcedureModel(Model):
     def execute(self):
         """Выполнить"""
+        print(f'Выполняю {self.func_name} с {self.dict()}')
         with self._db as db:
             return self.catch_response(db.procedure(self.func_name, *self.dict().values()))
