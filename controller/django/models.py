@@ -12,7 +12,10 @@ class DjangoModelMixin(Model):
         def update_data(items):
             assert getattr(items, 'get')
             for key in items:
-                data[key] = items.get(key)
+                if key.endswith('[]'):
+                    data[key.replace('[]', '')] = items.getlist(key)
+                else:
+                    data[key] = items.get(key)
 
         data = {}
         request = kwargs.pop('request', None)
