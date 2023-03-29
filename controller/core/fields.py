@@ -43,5 +43,5 @@ class FormatDate(CustomField):
                 try:
                     return dt.strftime(cls._output_format)
                 except Exception:
-                    raise ValueError("Получаемая дата не совпадает не подходит под нужный формат")
+                    raise ValueError("Получаемая дата не подходит под нужный формат")
         raise ValueError("Не удалось получить дату дату")

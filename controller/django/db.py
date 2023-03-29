@@ -1,9 +1,9 @@
 from django.db import connections
 
-from controller.core.db import DataBase
+from controller.core.db import AbstractDataBase
 
 
-class DjangoDataBase(DataBase):
+class DjangoDataBase(AbstractDataBase):
 
     def __init__(self, db_name: str = 'default', *args):
         super(DjangoDataBase, self).__init__(*args)

@@ -1,39 +1,11 @@
+from abc import ABCMeta, ABC
+
 import psycopg2
 
 
-class DataBase:
-    def __init__(self,
-                 db_name: str = None,
-                 host: str = None, port: int = 5432,
-                 user: str = None, password: str = None):
-        """
-        Управление базой данных
-        :param db_name: Название бд
-        :param user: Имя пользователя
-        :param password: Пароль пользователя
-        :param host: Хост
-        :param port: Порт
-        """
-        self.db_name = db_name
-        self.user = user
-        self.password = password
-        self.host = host
-        self.port = port
+class AbstractDataBase(ABC, metaclass=ABCMeta):
 
-    def __enter__(self):
-        assert all([self.db_name, self.user, self.password, self.host,
-                    self.port]), 'Указаны не все данные для подключения к бд'
-        try:
-            self.conn = psycopg2.connect(dbname=self.db_name, user=self.user,
-                                         password=self.password, host=self.host, port=self.port)
-        except Exception as e:
-            print("Ошибка при подключении к БД", '\n', e)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.conn.close()
-
-    def __query(self, callback, response_limit):
+    def __query(self, callback, response_limit: int):
         """Выполнение запроса по получению"""
 
         def to_dict(item):
@@ -83,9 +55,42 @@ class DataBase:
             lambda cursor: self.__create_query_execute(cursor, f'SELECT {aggregate} FROM ', func_name, *args),
             response_limit)
 
-    def procedure(self, func_name: str, *args):
+    def procedure(self, *args, func_name: str):
         def call_procedure(cursor):
             self.__create_query_execute(cursor, 'call ', func_name, *args)
             self.conn.commit()
 
         return self.__query(call_procedure, response_limit=1)
+
+
+class DataBase(AbstractDataBase):
+    def __init__(self,
+                 db_name: str,
+                 user: str, password: str,
+                 host: str = 'localhost', port: int = 5432):
+        """
+        Управление базой данных
+        :param db_name: Название бд
+        :param user: Имя пользователя
+        :param password: Пароль пользователя
+        :param host: Хост
+        :param port: Порт
+        """
+        self.db_name = db_name
+        self.user = user
+        self.password = password
+        self.host = host
+        self.port = port
+
+    def __enter__(self):
+        assert all([self.db_name, self.user, self.password, self.host,
+                    self.port]), 'Указаны не все данные для подключения к бд'
+        try:
+            self.conn = psycopg2.connect(dbname=self.db_name, user=self.user,
+                                         password=self.password, host=self.host, port=self.port)
+        except Exception as e:
+            print("Ошибка при подключении к БД", '\n', e)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.conn.close()

@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import Any, Union
 
 from pydantic import BaseModel, BaseConfig
@@ -8,7 +9,7 @@ from controller.core.functions import count
 
 
 class Model(BaseModel):
-    _db: DataBase = DataBase()
+    _db: DataBase
     _func_name: str = None
 
     class Config(BaseConfig):
@@ -44,6 +45,12 @@ class Model(BaseModel):
         """Обработка ответа"""
         return data
 
+    @staticmethod
+    def send_log(action: dict, func_name: str, data: dict):
+        current_date = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+        action_string = f"{action.get('function')}({action.get('limit') or ''})"
+        print(f"{current_date}: {action_string} {func_name} с {data}")
+
 
 class FunctionModel(Model):
 
@@ -52,19 +59,20 @@ class FunctionModel(Model):
 
     def get(self, limit: int = 1) -> Union[dict, list]:
         """Получение n элементов"""
-        print(f'Запрос [{limit}]: {self.func_name} {self.dict()}')
+        self.send_log({'function': 'get', 'limit': limit}, self.func_name, self.dict())
         with self._db as db:
-            return self.catch_response(db.function(*self.dict().values(), func_name=self.func_name, response_limit=limit))
+            return self.catch_response(
+                db.function(*self.dict().values(), func_name=self.func_name, response_limit=limit))
 
     def all(self):
         """Получение всех элементов"""
-        print(f'Запрос [все]: {self.func_name} {self.dict()}')
+        self.send_log({'function': 'all'}, self.func_name, self.dict())
         with self._db as db:
             return self.catch_response(db.function(*self.dict().values(), func_name=self.func_name, response_limit=-1))
 
     def length(self) -> int:
         """Получение количество строк"""
-        print(f'Запрос [count]: {self.func_name} {self.dict()}')
+        self.send_log({'function': 'length'}, self.func_name, self.dict())
         with self._db as db:
             return db.function(*self.dict().values(),
                                func_name=self.func_name, response_limit=1,
@@ -74,6 +82,6 @@ class FunctionModel(Model):
 class ProcedureModel(Model):
     def execute(self):
         """Выполнить"""
-        print(f'Выполняю {self.func_name} с {self.dict()}')
+        self.send_log({'function': 'execute'}, self.func_name, self.dict())
         with self._db as db:
-            return self.catch_response(db.procedure(self.func_name, *self.dict().values()))
+            return self.catch_response(db.procedure(*self.dict().values(), func_name=self.func_name))
