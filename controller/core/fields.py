@@ -29,9 +29,11 @@ class FormatDate(CustomField):
     """Поле для форматирования даты из строки"""
     _input_format: List[str]
     _output_format: str
+    _ERROR = "Не правильный формат даты"
 
     @classmethod
     def validate(cls, value, values, config, field):
+        print(cls._ERROR)
         if not value:
             return None
         for frmt in cls._input_format:
@@ -43,5 +45,5 @@ class FormatDate(CustomField):
                 try:
                     return dt.strftime(cls._output_format)
                 except Exception:
-                    raise ValueError("Получаемая дата не подходит под нужный формат")
-        raise ValueError("Не удалось получить дату дату")
+                    raise ValueError(cls._ERROR)
+        raise ValueError(cls._ERROR)
