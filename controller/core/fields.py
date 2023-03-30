@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from pydantic.errors import PydanticValueError
 
 
 class CustomField(BaseModel):
@@ -33,7 +34,6 @@ class FormatDate(CustomField):
 
     @classmethod
     def validate(cls, value, values, config, field):
-        print(cls._ERROR)
         if not value:
             return None
         for frmt in cls._input_format:
