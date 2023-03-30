@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel, ValidationError
-from pydantic.errors import PydanticValueError
+from pydantic import BaseModel
 
 
 class CustomField(BaseModel):
