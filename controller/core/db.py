@@ -12,20 +12,22 @@ class AbstractDataBase(ABC, metaclass=ABCMeta):
             if item:
                 return dict(zip(columns, item))
             return {}
-
-        with self.conn.cursor() as cursor:
-            callback(cursor)
-            columns = [col.name for col in cursor.description or []]
-            if response_limit == 1:
-                try:
-                    response = to_dict(cursor.fetchone())
-                except Exception as e:
-                    return None
-            elif response_limit <= 0:
-                response = list(map(to_dict, cursor.fetchall()))
-            else:
-                response = list(map(to_dict, cursor.fetchmany(response_limit)))
-            return response
+        try:
+            with self.conn.cursor() as cursor:
+                callback(cursor)
+                columns = [col.name for col in cursor.description or []]
+                if response_limit == 1:
+                    try:
+                        response = to_dict(cursor.fetchone())
+                    except Exception as e:
+                        return None
+                elif response_limit <= 0:
+                    response = list(map(to_dict, cursor.fetchall()))
+                else:
+                    response = list(map(to_dict, cursor.fetchmany(response_limit)))
+                return response
+        except Exception:
+            pass
 
     @staticmethod
     def error_to_sql(value):
