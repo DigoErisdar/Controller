@@ -5,7 +5,7 @@ import psycopg2
 
 class AbstractDataBase(ABC, metaclass=ABCMeta):
     param_prefix = ''
-    is_named_parameters = True
+    is_named_parameters = False
 
     def __query(self, callback, response_limit: int):
         """Выполнение запроса по получению"""

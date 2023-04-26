@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "FunctionStoredController"
-version = '0.0.9'
+version = '0.0.10'
 description = "Контроллер для работы с хранимыми процедурами"
 authors = [{name = "DigoErisdar", email = "danil.galkin2017@mail.ru"}]
 readme = "README.md"
