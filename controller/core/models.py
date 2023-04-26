@@ -20,6 +20,7 @@ def log(func):
 class Model(BaseModel):
     _db: DataBase
     _func_name: str = None
+    _schema: str = 'public'
 
     class Config(BaseConfig):
         use_enum_values = True
@@ -47,7 +48,7 @@ class Model(BaseModel):
 
     @property
     def func_name(self):
-        return self._func_name or self.camel_to_snake(self.__class__.__qualname__)
+        return self._func_name or f'{self._schema}.{self.camel_to_snake(self.__class__.__qualname__)}'
 
     @staticmethod
     def catch_response(data: Any):
@@ -69,19 +70,19 @@ class FunctionModel(Model):
         """Получение n элементов"""
         with self._db as db:
             return self.catch_response(
-                db.function(*self.dict().values(), func_name=self.func_name, response_limit=limit))
+                db.function(attrs=self.dict(), func_name=self.func_name, response_limit=limit))
 
     @log
     def all(self):
         """Получение всех элементов"""
         with self._db as db:
-            return self.catch_response(db.function(*self.dict().values(), func_name=self.func_name, response_limit=-1))
+            return self.catch_response(db.function(attrs=self.dict(), func_name=self.func_name, response_limit=-1))
 
     @log
     def length(self) -> int:
         """Получение количество строк"""
         with self._db as db:
-            return db.function(*self.dict().values(),
+            return db.function(attrs=self.dict(),
                                func_name=self.func_name, response_limit=1,
                                aggregate=count()).get('count', 0)
 
@@ -91,4 +92,4 @@ class ProcedureModel(Model):
     def execute(self):
         """Выполнить"""
         with self._db as db:
-            return self.catch_response(db.procedure(*self.dict().values(), func_name=self.func_name))
+            return self.catch_response(db.procedure(attrs=self.dict(), func_name=self.func_name))

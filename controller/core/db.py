@@ -4,6 +4,8 @@ import psycopg2
 
 
 class AbstractDataBase(ABC, metaclass=ABCMeta):
+    param_prefix = ''
+    is_named_parameters = True
 
     def __query(self, callback, response_limit: int):
         """Выполнение запроса по получению"""
@@ -19,7 +21,7 @@ class AbstractDataBase(ABC, metaclass=ABCMeta):
             if response_limit == 1:
                 try:
                     response = to_dict(cursor.fetchone())
-                except Exception as e:
+                except Exception:
                     return None
             elif response_limit <= 0:
                 response = list(map(to_dict, cursor.fetchall()))
@@ -39,25 +41,33 @@ class AbstractDataBase(ABC, metaclass=ABCMeta):
     def func_name_with_attrs_to_sql(func_name: str, *args):
         return f"{func_name}({','.join(map(DataBase.error_to_sql, args))})"
 
-    @staticmethod
-    def __create_query_execute(cursor, prefix: str, func_name: str, *args):
-        proc_param = ",".join(str('%s') for _ in args)
-
+    def __create_query_execute(self, cursor, prefix: str, func_name: str, data: dict):
+        if self.is_named_parameters:
+            proc_param = ', '.join(
+                [
+                    f'{self.param_prefix + key} => {self.error_to_sql(value)}'
+                    for key, value in data.items()
+                ]
+            )
+            args = []
+        else:
+            proc_param = ",".join(str('%s') for _ in data)
+            args = list(data.values())
         try:
             return cursor.execute(f"{prefix} {func_name}({proc_param})", args)
         except Exception as e:
             raise ValueError(
-                f"""Ошибка с параметрами в {prefix} {DataBase.func_name_with_attrs_to_sql(func_name, *args)}
+                f"""Ошибка с параметрами в {prefix} {func_name}({proc_param})
                 \n {e}""")
 
-    def function(self, *args, func_name: str, response_limit: int = -1, aggregate='*'):
+    def function(self, attrs: dict, func_name: str, response_limit: int = -1, aggregate='*'):
         return self.__query(
-            lambda cursor: self.__create_query_execute(cursor, f'SELECT {aggregate} FROM ', func_name, *args),
+            lambda cursor: self.__create_query_execute(cursor, f'SELECT {aggregate} FROM ', func_name, data=attrs),
             response_limit)
 
-    def procedure(self, *args, func_name: str):
+    def procedure(self, attrs: dict, func_name: str):
         def call_procedure(cursor):
-            self.__create_query_execute(cursor, 'call ', func_name, *args)
+            self.__create_query_execute(cursor, 'call ', func_name, data=attrs)
             try:
                 self.conn.commit()
             except Exception:
@@ -67,6 +77,8 @@ class AbstractDataBase(ABC, metaclass=ABCMeta):
 
 
 class DataBase(AbstractDataBase):
+    param_prefix = 'p_'
+
     def __init__(self,
                  db_name: str,
                  user: str, password: str,
