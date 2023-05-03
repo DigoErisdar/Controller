@@ -21,6 +21,8 @@ class Model(BaseModel):
     _db: DataBase
     _func_name: str = None
     _schema: str = 'public'
+    _is_core: bool = False  # Указать корневую модель от которой будут наследоваться остальные модели,
+    # для автоматического определения func_name
 
     class Config(BaseConfig):
         use_enum_values = True
@@ -48,7 +50,13 @@ class Model(BaseModel):
 
     @property
     def func_name(self):
-        return self._func_name or f'{self._schema}.{self.camel_to_snake(self.__class__.__qualname__)}'
+        parent = self.__class__
+        classes = [parent]
+        while getattr(parent.__base__, '_is_core', False) and getattr(parent.__base__.__base__, '_is_core', False):
+            parent = parent.__base__
+            if getattr(parent.__base__, '_is_core', False):
+                classes.append(parent)
+        return self._func_name or f'{self._schema}.{self.camel_to_snake(classes[-1].__qualname__)}'
 
     @staticmethod
     def catch_response(data: Any):
