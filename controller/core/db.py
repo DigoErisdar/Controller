@@ -1,6 +1,7 @@
 from abc import ABCMeta, ABC
 
 import psycopg2
+from psycopg2 import DatabaseError
 
 
 class AbstractDataBase(ABC, metaclass=ABCMeta):
@@ -56,7 +57,7 @@ class AbstractDataBase(ABC, metaclass=ABCMeta):
         try:
             return cursor.execute(f"{prefix} {func_name}({proc_param})", args)
         except Exception as e:
-            raise ValueError(
+            raise DatabaseError(
                 f"""Ошибка с параметрами в {prefix} {func_name}({proc_param})
                 \n {e}""")
 
