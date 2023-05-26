@@ -1,12 +1,89 @@
+from abc import ABCMeta, ABC
+
 import psycopg2
-from psycopg2.extras import DictCursor
+from psycopg2 import DatabaseError
 
 
-class DataBase:
+class AbstractDataBase(ABC, metaclass=ABCMeta):
+    param_prefix = ''
+    is_named_parameters = False
+
+    def __query(self, callback, response_limit: int):
+        """Выполнение запроса по получению"""
+
+        def to_dict(item):
+            if item:
+                return dict(zip(columns, item))
+            return {}
+
+        with self.conn.cursor() as cursor:
+            callback(cursor)
+            columns = [col.name for col in cursor.description or []]
+            if response_limit == 1:
+                try:
+                    response = to_dict(cursor.fetchone())
+                except Exception:
+                    return None
+            elif response_limit <= 0:
+                response = list(map(to_dict, cursor.fetchall()))
+            else:
+                response = list(map(to_dict, cursor.fetchmany(response_limit)))
+            return response
+
+    @staticmethod
+    def error_to_sql(value):
+        if value is None:
+            return 'null'
+        if not isinstance(value, str):
+            return str(value)
+        return f"'{value}'"
+
+    @staticmethod
+    def func_name_with_attrs_to_sql(func_name: str, *args):
+        return f"{func_name}({','.join(map(DataBase.error_to_sql, args))})"
+
+    def __create_query_execute(self, cursor, prefix: str, func_name: str, data: dict):
+        if self.is_named_parameters:
+            proc_param = ', '.join(
+                [
+                    f'{self.param_prefix + key} => {self.error_to_sql(value)}'
+                    for key, value in data.items()
+                ]
+            )
+            args = []
+        else:
+            proc_param = ",".join(str('%s') for _ in data)
+            args = list(data.values())
+        try:
+            return cursor.execute(f"{prefix} {func_name}({proc_param})", args)
+        except Exception as e:
+            raise DatabaseError(
+                f"""Ошибка с параметрами в {prefix} {func_name}({proc_param})
+                \n {e}""")
+
+    def function(self, attrs: dict, func_name: str, response_limit: int = -1, aggregate='*'):
+        return self.__query(
+            lambda cursor: self.__create_query_execute(cursor, f'SELECT {aggregate} FROM ', func_name, data=attrs),
+            response_limit)
+
+    def procedure(self, attrs: dict, func_name: str):
+        def call_procedure(cursor):
+            self.__create_query_execute(cursor, 'call ', func_name, data=attrs)
+            try:
+                self.conn.commit()
+            except Exception:
+                pass
+
+        return self.__query(call_procedure, response_limit=1)
+
+
+class DataBase(AbstractDataBase):
+    param_prefix = 'p_'
+
     def __init__(self,
-                 db_name: str = None,
-                 host: str = None, port: int = 5432,
-                 user: str = None, password: str = None):
+                 db_name: str,
+                 user: str, password: str,
+                 host: str = 'localhost', port: int = 5432):
         """
         Управление базой данных
         :param db_name: Название бд
@@ -33,48 +110,3 @@ class DataBase:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.conn.close()
-
-    def __query(self, callback, response_limit):
-
-        with self.conn.cursor(cursor_factory=DictCursor) as cursor:
-            callback(cursor)
-            if response_limit == 1:
-                response = dict(cursor.fetchone())
-            elif response_limit <= 0:
-                response = list(map(dict, cursor.fetchall()))
-            else:
-                response = list(map(dict, cursor.fetchmany(response_limit)))
-            return response
-
-    @staticmethod
-    def error_to_sql(value):
-        if value is None:
-            return 'null'
-        if not isinstance(value, str):
-            return str(value)
-        return f"'{value}'"
-
-    @staticmethod
-    def func_name_with_attrs_to_sql(func_name: str, *args):
-        return f"{func_name}({','.join(map(DataBase.error_to_sql, args))})"
-
-    @staticmethod
-    def __create_query_execute(cursor, prefix: str, func_name: str, *args):
-        proc_param = ",".join(str('%s') for _ in args)
-
-        try:
-            return cursor.execute(f"{prefix} {func_name}({proc_param})", args)
-        except Exception as e:
-            raise ValueError(f"""Ошибка при вызове {prefix} {DataBase.func_name_with_attrs_to_sql(func_name, *args)}""")
-
-    def function(self, *args, func_name: str, response_limit: int = -1, aggregate='*'):
-        return self.__query(
-            lambda cursor: self.__create_query_execute(cursor, f'SELECT {aggregate} FROM ', func_name, *args),
-            response_limit)
-
-    def procedure(self, func_name: str, *args):
-        def call_procedure(cursor):
-            self.__create_query_execute(cursor, 'call ', func_name, *args)
-            self.conn.commit()
-
-        return self.__query(call_procedure, response_limit=1)

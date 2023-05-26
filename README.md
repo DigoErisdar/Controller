@@ -1,6 +1,6 @@
 # Контроллер для работы с хранимыми процедурами
 
-## Пример использования с фунциями
+## Пример использования с функциями
 
 ```python
 from controller.core.models import FunctionModel
@@ -34,7 +34,7 @@ from typing import Optional
 
 
 class RemoveOrder(ProcedureModel):
-    """Хранимка для удаление заказа"""
+    """Хранимка для удаления заказа"""
     _func_name = 'data.remove_order'
     id: Optional[int]
     status_id: Optional[int]
@@ -133,9 +133,6 @@ except ValidationError as e:
 Если данное поле валидацию не пройдет, то мы получим ошибку, которую можно вернуть в формате json
 
 # FastAPI
-
-Использование данного подхода с FastAPI раскрывается еще сильнее,
-мы получаем грубо говоря автодокументирование нашего api с которого еще и выполнить запрос можно
 
 ```python
 from controller.core.models import FunctionModel

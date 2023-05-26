@@ -1,20 +1,21 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
 [project]
-name = "Controller"
-version = "0.0.1"
-authors = [
-  { name="Galkin Daniil", email="danil.galkin2017@mail.ru" },
-]
-description = "Пакет для работы с хранимыми процедурами"
+name = "FunctionStoredController"
+version = '0.0.10'
+description = "Контроллер для работы с хранимыми процедурами"
+authors = [{name = "DigoErisdar", email = "danil.galkin2017@mail.ru"}]
 readme = "README.md"
-requires-python = ">=3"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
-dependencies = [
-    'psycopg2-binary',
-    'pydantic',
-]
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+
 [project.urls]
-"Homepage" = "https://github.com/DigoErisdar/Controller"
+Home = "https://github.com/DigoErisdar/Controller"
+
+[tool.flit.module]
+name = 'controller'
+
+[tool.poetry.dependencies]
+pydantic = "^1.10.3"
