@@ -43,17 +43,17 @@ class AbstractDataBase(ABC, metaclass=ABCMeta):
         return f"{func_name}({','.join(map(DataBase.error_to_sql, args))})"
 
     def __create_query_execute(self, cursor, prefix: str, func_name: str, data: dict):
+        args = list(data.values())
         if self.is_named_parameters:
             proc_param = ', '.join(
                 [
-                    f'{self.param_prefix + key} => {self.error_to_sql(value)}'
+                    f"{self.param_prefix + key} => %s"
                     for key, value in data.items()
                 ]
             )
-            args = []
         else:
             proc_param = ",".join(str('%s') for _ in data)
-            args = list(data.values())
+
         try:
             return cursor.execute(f"{prefix} {func_name}({proc_param})", args)
         except Exception as e:
