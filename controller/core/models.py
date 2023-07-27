@@ -28,6 +28,7 @@ class Model(BaseModel):
         use_enum_values = True
         validate_all = True
         validate_assignment = True
+        allow_reuse = True
         error_msg_templates = {
             'type_error.none.not_allowed': 'Поле не может быть пустым',
             'value_error.missing': "Поле обязательное",
