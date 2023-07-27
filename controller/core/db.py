@@ -43,22 +43,24 @@ class AbstractDataBase(ABC, metaclass=ABCMeta):
         return f"{func_name}({','.join(map(DataBase.error_to_sql, args))})"
 
     def __create_query_execute(self, cursor, prefix: str, func_name: str, data: dict):
-        args = list(data.values())
         if self.is_named_parameters:
-            proc_param = ', '.join(
-                [
-                    f"{self.param_prefix + key} => %s"
-                    for key, value in data.items()
-                ]
-            )
+            proc_param = [
+                f'{self.param_prefix + key} => %s'
+                for key, value in data.items()
+            ]
         else:
-            proc_param = ",".join(str('%s') for _ in data)
+            proc_param = ['%s' for _ in data]
 
+        args = list(data.values())
+        query = f"{prefix} {func_name}({', '.join(proc_param)})"
         try:
-            return cursor.execute(f"{prefix} {func_name}({proc_param})", args)
+            return cursor.execute(query, args)
         except Exception as e:
+            labels = list(
+                map(lambda i: i[0].replace('%s', self.error_to_sql(i[1])), list(zip(proc_param, data.values()))))
+            print(labels)
             raise DatabaseError(
-                f"""Ошибка с параметрами в {prefix} {func_name}({proc_param})
+                f"""Ошибка с параметрами в {prefix} {func_name}({', '.join(labels)})
                 \n {e}""")
 
     def function(self, attrs: dict, func_name: str, response_limit: int = -1, aggregate='*'):
