@@ -22,7 +22,8 @@ class Model(BaseModel):
     _func_name: str = None
     _schema: str = 'public'
     _is_core: bool = False  # Указать корневую модель от которой будут наследоваться остальные модели,
-    # для автоматического определения func_name
+
+    # для автоматического определения func_name TODO: Доработать с использованием наследования
 
     class Config(BaseConfig):
         use_enum_values = True
@@ -40,7 +41,8 @@ class Model(BaseModel):
 
     @property
     def sql_func(self):
-        return f"{self.func_name}({','.join(map(DataBase.error_to_sql, self.dict().values()))})"
+        # TODO: Добавить call or select * from
+        return f"{self.func_name}({', '.join(self._db.get_query(self.dict()))})"
 
     @staticmethod
     def camel_to_snake(full_name):
@@ -66,7 +68,7 @@ class Model(BaseModel):
 
     def send_log(self, func, args, kwargs):
         now = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
-        print(f'{now}: Вызов {self.func_name} {func.__name__}({args};{kwargs}) с параметрами: {self.dict()}')
+        print(f'{now}: Вызов {self.sql_func}')
 
 
 class FunctionModel(Model):

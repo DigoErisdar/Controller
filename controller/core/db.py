@@ -43,25 +43,26 @@ class AbstractDataBase(ABC, metaclass=ABCMeta):
         return f"{func_name}({','.join(map(DataBase.error_to_sql, args))})"
 
     def __create_query_execute(self, cursor, prefix: str, func_name: str, data: dict):
-        if self.is_named_parameters:
-            proc_param = [
-                f'{self.param_prefix + key} => %s'
-                for key, value in data.items()
-            ]
-        else:
-            proc_param = ['%s' for _ in data]
-
+        proc_param = self._get_proc_params(data)
         args = list(data.values())
         query = f"{prefix} {func_name}({', '.join(proc_param)})"
         try:
             return cursor.execute(query, args)
         except Exception as e:
-            labels = list(
-                map(lambda i: i[0].replace('%s', self.error_to_sql(i[1])), list(zip(proc_param, data.values()))))
-            print(labels)
+            labels = f"{prefix} {func_name}({', '.join(self.get_query(data))})"
             raise DatabaseError(
-                f"""Ошибка с параметрами в {prefix} {func_name}({', '.join(labels)})
+                f"""Ошибка с параметрами в ${labels}
                 \n {e}""")
+
+    def get_query(self, data: dict):
+        return list(
+            map(lambda i: i[0].replace('%s', self.error_to_sql(i[1])),
+                list(zip(self._get_proc_params(data), data.values())))
+        )
+
+    def _get_proc_params(self, data: dict):
+        """Получение параметров для передачи в вызов %s заменяется на параметр под капотом для безопасности"""
+        return list(map(lambda key: (f'{self.param_prefix}{key} => ' if self.is_named_parameters else '') + '%s', data))
 
     def function(self, attrs: dict, func_name: str, response_limit: int = -1, aggregate='*'):
         return self.__query(
